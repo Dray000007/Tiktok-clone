@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">DUROH</div>
+    <div class="background-animation" id="background-animation"></div>
+    <div class="login-card">
+      <div class="header-content">
+        <h2>Welcome Back</h2>
+        <p>Log in to continue</p>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrapper">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="Enter your email"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+            <div class="input-wrapper password-wrapper">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                placeholder="Enter your password"
+              />
+              <span id="togglePassword" class="toggle-password" style="cursor:pointer">👁</span>
+            </div>
+        </div>
+        <button type="submit" id="login-button" class="login-button">
+          <span class="button-text">Log in</span>
+          <span class="spinner hidden"></span>
+        </button>
+        <div class="label-group">
+          <button type="button" id="forgot-password">Forgot Password?</button>
+        </div>
+      </form>
+      <div class="signup-prompt">
+        <button id="yeah">Don't have an account? Sign up</button>
+      </div>
+      <div class="footer-text">
+        © 2025 DUROH. All rights reserved.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0"
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginForm = document.getElementById("login-form");
+  const loginButton = document.getElementById("login-button");
+  const buttonText = loginButton.querySelector(".button-text");
+  const spinner = loginButton.querySelector(".spinner");
+  const passwordInput = document.getElementById("password");
+  const togglePassword = document.getElementById("togglePassword");
+
+  // ===== Toggle Password Visibility =====
+  togglePassword.addEventListener("click", () => {
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      togglePassword.textContent = "🙈";
+    } else {
+      passwordInput.type = "password";
+      togglePassword.textContent = "👁";
+    }
+  });
+
+  // ===== Login Form Submission =====
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+    const password = passwordInput.value;
+
+    buttonText.classList.add("hidden");
+    spinner.classList.remove("hidden");
+    loginButton.disabled = true;
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        alert("Invalid Email or Password");
+      } else if (!data.session) {
+        alert("Invalid Email or Password.");
+      } else {
+        console.log("Logged in user:", data.user);
+        alert("Login successful! Welcome " + data.user.email);
+        window.location.href = "home.html"; // redirect to home
+      }
+    } catch (err) {
+      alert("An unexpected error occurred: " + err.message);
+    }
+
+    buttonText.classList.remove("hidden");
+    spinner.classList.add("hidden");
+    loginButton.disabled = false;
+  });
+
+  // ===== Redirect Buttons =====
+  document.getElementById("forgot-password").addEventListener("click", () => {
+    window.location.href = "forgetpassword.html";
+  });
+  document.getElementById("yeah").addEventListener("click", () => {
+    window.location.href = "signup.html";
+  });
+});
+  </script>
+</body>
+</html>

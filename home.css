@@ -1,0 +1,181 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  width: 100%;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: "Raleway", sans-serif;
+  font-size: 1rem;
+  background-color: black; /* Change this to black */
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: black;
+  padding: 10px 20px;
+  color: #fff;
+}
+
+.logo {
+  font-size: 44px;
+  font-weight: bold;
+  color: #5795f3;
+}
+
+.nav-items {
+  list-style: none;
+  display: flex;
+  gap: 60px;
+  padding: 0 400px;
+}
+
+.nav-item .nav-link {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+.nav-item .nav-link:hover {
+  background: #5795f3;
+  border-radius: 10px;
+}
+
+.nav-item .nav-link.active {
+  background: #5795f3;
+  border-radius: 10px;
+}
+
+#homeBtn {
+  cursor: none;
+}
+#homeBtn:hover,
+#homeBtn.active {
+  background: transparent !important;
+  border-radius: 5px !important;
+}
+
+#amPic{
+  width: 70px;
+  height: 70px;
+  background-color: hsl(9, 94%, 61%);
+  border-radius: 100%;
+  font-size: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0;
+  margin: -50px 10px;
+  cursor: none;
+}
+
+main {
+  width: 100%;
+  min-height: 85vh;
+  background-color: black;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  overflow-x: hidden;
+}
+.qui {
+  width: 350px;             /* fixed width */
+  height: 80vh;             /* container height */
+  border: 7px solid #5795f3;
+  border-radius: 40px;
+  margin: 20px 0 20px 70px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;       /* important for absolute slide positioning */
+}
+
+.slide {
+  position: absolute;       /* make it fill the container */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.slide video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+
+.scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  margin: 200px 20px;
+}
+
+.scroll button {
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+/* Profile picture container */
+.profile-header {
+  margin-left: 20px;
+}
+
+#profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%; /* circular */
+  overflow: hidden;
+  border: 2px solid #87CEFA; /* light royal blue border */
+}
+
+#profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.nc {
+  width: 48px;
+  height: 48px;
+  border-radius: 100%;
+  background-color: aqua;
+  border: 2px solid #5795f3;
+  margin: 0 250px;
+}
+
+#up, #down {
+  width: 60px;
+  height: 60px;
+  border-radius: 100%;
+  background-color: #5795f3;
+}
+#up:hover, #down:hover {
+  background-color: hsl(28, 72%, 83%);
+}
+.slide { text-align:center; transition: transform 0.5s ease; }
+  @keyframes fade { from {opacity:0; transform:translateY(-20px);} to{opacity:1; transform:translateY(0);} }
+

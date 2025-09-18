@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Page</title>
+  <link rel="stylesheet" href="profile.css">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">DUROH</div>
+    <nav>
+      <ul class="nav-items">
+        <li class="nav-item">
+          <button class="nav-link" id="homeBtn">
+            <span class="material-symbols-outlined">home</span> Home
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="inboxBtn">
+            <span class="material-symbols-outlined">inbox</span> Inbox
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="uploadBtn">
+            <span class="material-symbols-outlined">upload</span> Upload
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="profileBtn">
+            <span class="material-symbols-outlined">person</span> Profile
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="profile-container">
+    <div class="profile-header">
+      <div id="profile-pic">
+        <img id="profile-pic-img" src="" alt="Profile Picture">
+      </div>
+    </div>
+    <div class="profile-info">
+      <h2 id="username"></h2>
+      <p id="bio"></p>
+      <div class="profile-actions">
+        <button id="editBtn">Edit Profile</button>
+        <button id="logoutBtn">Log out</button>
+      </div>
+    </div>
+
+    <div class="edit-form" id="editForm" style="display:none;">
+      <input type="text" id="editUsername" placeholder="Username" />
+      <input type="text" id="editBio" placeholder="Bio" />
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="choosePicBtn" type="button">Choose a new picture</button>
+        <button id="removePicBtn" type="button">Remove Picture</button>
+      </div>
+      <input type="file" id="profilePicInput" accept="image/*" style="display:none;">
+      <button id="saveBtn">Save</button>
+    </div>  
+
+    <div class="video-section">
+      <h3>Uploaded Videos</h3>
+      <div class="video-grid"></div>
+    </div>
+    <div id="contextMenu">Delete Video</div>
+  </div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const CLOUD_NAME = "djjlt3ghq";
+const UPLOAD_PRESET = "saveImages";
+
+const profilePicImg = document.getElementById("profile-pic-img");
+const editBtn = document.getElementById("editBtn");
+const editForm = document.getElementById("editForm");
+const choosePicBtn = document.getElementById("choosePicBtn");
+const removePicBtn = document.getElementById("removePicBtn");
+const profilePicInput = document.getElementById("profilePicInput");
+const saveBtn = document.getElementById("saveBtn");
+const usernameEl = document.getElementById("username");
+const bioEl = document.getElementById("bio");
+const editUsername = document.getElementById("editUsername");
+const editBio = document.getElementById("editBio");
+const logoutBtn = document.getElementById("logoutBtn");
+
+let selectedFile = null;
+
+// Prevent back button from returning after logout
+window.history.pushState(null, "", window.location.href);
+window.onpopstate = () => { window.history.go(1); };
+
+// Navbar redirects
+window.onload = () => {
+  document.getElementById('homeBtn').onclick = () => window.location.href = 'home.html';
+  document.getElementById('inboxBtn').onclick = () => window.location.href = 'inbox.html';
+  document.getElementById('uploadBtn').onclick = () => window.location.href = 'upload.html';
+};
+
+// ===== Check Supabase session =====
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    window.location.replace("index.html");
+    return;
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  usernameEl.textContent = user.user_metadata?.firstName || "User";
+  bioEl.textContent = user.user_metadata?.bio || "";
+  if (user.user_metadata?.picUrl) profilePicImg.src = user.user_metadata.picUrl;
+}
+checkAuth();
+
+// ===== Logout =====
+logoutBtn.addEventListener("click", async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) alert("Logout failed: " + error.message);
+  else alert("Logged out successfully"); 
+  window.location.replace("index.html");
+});
+
+// ===== Edit Profile =====
+editBtn.addEventListener("click", () => {
+  editForm.style.display = editForm.style.display === "none" ? "block" : "none";
+});
+
+choosePicBtn.addEventListener("click", () => profilePicInput.click());
+profilePicInput.addEventListener("change", (e) => {
+  selectedFile = e.target.files[0];
+  if (selectedFile) profilePicImg.src = URL.createObjectURL(selectedFile);
+});
+removePicBtn.addEventListener("click", () => { profilePicImg.src = ""; selectedFile = null; });
+
+saveBtn.addEventListener("click", async () => {
+  let uploadedUrl = profilePicImg.src;
+  if (selectedFile) {
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("upload_preset", UPLOAD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    uploadedUrl = data.secure_url;
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      firstName: editUsername.value || usernameEl.textContent,
+      bio: editBio.value || bioEl.textContent,
+      picUrl: uploadedUrl
+    }
+  });
+
+  if (error) return alert("Profile update failed: " + error.message);
+
+  usernameEl.textContent = editUsername.value || usernameEl.textContent;
+  bioEl.textContent = editBio.value || bioEl.textContent;
+  profilePicImg.src = uploadedUrl;
+
+  alert("Profile updated!");
+  editForm.style.display = "none";
+});
+
+// ===== Video grid (local only) =====
+const videoGrid = document.querySelector('.video-grid');
+const contextMenu = document.getElementById('contextMenu');
+let videos = JSON.parse(localStorage.getItem('uploadedVideos')) || [];
+let selectedVideoIndex = null;
+
+function renderGrid() {
+  videoGrid.innerHTML = '';
+  videos.forEach(({ url, caption }, index) => {
+    const box = document.createElement('div');
+    box.className = 'video-box';
+    const videoEl = document.createElement('video');
+    videoEl.src = url;
+    videoEl.loop = true;
+    videoEl.playsInline = true;
+    videoEl.muted = true;
+    videoEl.style.filter = 'brightness(0.3)';
+    box.appendChild(videoEl);
+
+    if (caption) {
+      const captionEl = document.createElement('p');
+      captionEl.className = 'caption-overlay';
+      captionEl.innerText = caption;
+      box.appendChild(captionEl);
+    }
+
+    box.addEventListener('mouseenter', () => { videoEl.play(); videoEl.style.filter='brightness(1)'; });
+    box.addEventListener('mouseleave', () => { videoEl.pause(); videoEl.style.filter='brightness(0.3)'; });
+    box.addEventListener('click', () => {
+      if (videoEl.paused) { videoEl.muted = false; videoEl.play(); videoEl.style.filter='brightness(1)'; }
+      else { videoEl.pause(); videoEl.style.filter='brightness(0.3)'; }
+    });
+    box.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      selectedVideoIndex = index;
+      contextMenu.style.top = e.pageY + 'px';
+      contextMenu.style.left = e.pageX + 'px';
+      contextMenu.style.display = 'block';
+    });
+
+    videoGrid.appendChild(box);
+  });
+}
+
+renderGrid();
+document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
+contextMenu.addEventListener('click', () => {
+  if (selectedVideoIndex === null) return;
+  videos.splice(selectedVideoIndex, 1);
+  localStorage.setItem('uploadedVideos', JSON.stringify(videos));
+  renderGrid();
+  contextMenu.style.display = 'none';
+  selectedVideoIndex = null;
+});
+</script>
+</body>
+</html>

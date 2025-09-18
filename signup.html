@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup Page</title>
+  <link rel="stylesheet" href="signup.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">DUROH</div>
+    <div class="background-animation" id="background-animation"></div>
+    <div class="login-card">
+      <div class="header-content">
+        <h2>Create Account</h2>
+        <p>Sign up to get started</p>
+      </div>
+      <form id="signup-form" class="login-form">
+        
+        <!-- First Name -->
+        <div class="form-group">
+          <label for="first-name">First Name</label>
+          <div class="input-wrapper">
+            <input
+              id="first-name"
+              name="first-name"
+              type="text"
+              required
+              placeholder="Enter your first name"
+            />
+          </div>
+        </div>
+
+        <!-- Last Name -->
+        <div class="form-group">
+          <label for="last-name">Last Name</label>
+          <div class="input-wrapper">
+            <input
+              id="last-name"
+              name="last-name"
+              type="text"
+              required
+              placeholder="Enter your last name"
+            />
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrapper">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="Enter your email"
+            />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              placeholder="Create a password"
+            />
+            <span class="toggle-password" onclick="togglePassword('password', this)">👁</span>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="confirm-password">Confirm Password</label>
+          <div class="input-wrapper">
+            <input
+              id="confirm-password"
+              name="confirm-password"
+              type="password"
+              required
+              placeholder="Confirm your password"
+            />
+            <span class="toggle-password" onclick="togglePassword('confirm-password', this)">👁</span>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="signup-button" class="login-button">
+          <span class="button-text">Sign up</span>
+          <span class="spinner hidden"></span>
+        </button>
+      </form>
+
+      <div class="signup-prompt">
+        <button id="yww">Already have an account? Log in</button>
+      </div>
+      <div class="footer-text">
+        © 2025 DUROH. All rights reserved.
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase Signup Script -->
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js"
+
+    // 🔹 Replace with your own Supabase credentials
+    const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co"
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0"
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    // Toggle password visibility
+    window.togglePassword = function(fieldId, icon) {
+      const input = document.getElementById(fieldId);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "🙈";
+      } else {
+        input.type = "password";
+        icon.textContent = "👁";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const backgroundElement = document.getElementById('background-animation');
+      for (let i = 0; i < 20; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        const size = Math.random() * 100 + 50;
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.top = `${Math.random() * 100}%`;
+        const duration = Math.random() * 10 + 10;
+        bubble.style.animationDuration = `${duration}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        backgroundElement.appendChild(bubble);
+      }
+
+      const signupForm = document.getElementById("signup-form");
+      const signupButton = document.getElementById("signup-button");
+      const buttonText = signupButton.querySelector(".button-text");
+      const spinner = signupButton.querySelector(".spinner");
+
+      signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("first-name").value;
+        const lastName = document.getElementById("last-name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirm-password").value;
+
+        if (password !== confirmPassword) {
+          alert("Passwords do not match!");
+          return;
+        }
+
+        // Show loading
+        buttonText.classList.add("hidden");
+        spinner.classList.remove("hidden");
+        signupButton.disabled = true;
+
+        // Supabase sign up
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { firstName, lastName } // saved as user_metadata
+          }
+        });
+
+        // Stop loading
+        buttonText.classList.remove("hidden");
+        spinner.classList.add("hidden");
+        signupButton.disabled = false;
+
+        if (error) {
+          alert(error.message);
+        } else {
+          alert("Signup successful! Please check your email to confirm your account.");
+          console.log("New user:", data.user);
+          // Optional: redirect to login page
+          window.location.href = "index.html";
+        }
+      });
+
+      // Redirect button
+      document.getElementById("yww").addEventListener("click", function() {
+        window.location.href = "index.html";
+      });
+
+      // Input animations
+      const inputs = document.querySelectorAll("input");
+      inputs.forEach(input => {
+        const wrapper = input.parentElement;
+        input.addEventListener("focus", () => wrapper.style.transform = "scale(1.01)");
+        input.addEventListener("blur", () => wrapper.style.transform = "scale(1)");
+        input.addEventListener("mousedown", () => wrapper.style.transform = "scale(0.995)");
+        input.addEventListener("mouseup", () => wrapper.style.transform = "scale(1.01)");
+      });
+    });
+  </script>
+</body>
+</html>

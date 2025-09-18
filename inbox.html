@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="inbox.css">
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">DUROH</div>
+    <nav>
+      <ul class="nav-items">
+        <li class="nav-item">
+          <button class="nav-link" id="homeBtn">
+            <span class="material-symbols-outlined">home</span> Home
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="inboxBtn">
+            <span class="material-symbols-outlined">inbox</span> Inbox
+          </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="uploadBtn">
+            <span class="material-symbols-outlined">upload</span> Upload
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="profileBtn">
+            <span class="material-symbols-outlined">person</span> Profile
+          </button>
+        </li>
+      </ul>
+    </nav>
+    </header>
+    <div class="chat-container">
+    <div class="messages" id="messages"></div>
+
+    <div class="chat-input-container">
+      <input type="text" id="chatInput" placeholder="Type your message..." />
+      <button id="sendBtn">
+        <span class="material-symbols-outlined">send</span>
+      </button>
+    </div>
+  </div>
+ <script>
+    window.onload = function() {
+      const homeBtn = document.getElementById('homeBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const profileBtn = document.getElementById('profileBtn');
+
+      homeBtn.addEventListener('click', function() {
+        window.location.href = 'index.html';
+      });
+
+      uploadBtn.addEventListener('click', function() {
+        window.location.href = 'upload.html';
+    });
+        profileBtn.addEventListener('click', function() {
+            window.location.href = 'profile.html';
+        });
+}
+ </script>
+</body>
+</html>
