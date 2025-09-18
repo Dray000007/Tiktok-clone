@@ -12,35 +12,17 @@
     <div class="logo">DUROH</div>
     <nav>
       <ul class="nav-items">
-        <li class="nav-item">
-          <button class="nav-link" id="homeBtn">
-            <span class="material-symbols-outlined">home</span> Home
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="inboxBtn">
-            <span class="material-symbols-outlined">inbox</span> Inbox
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="uploadBtn">
-            <span class="material-symbols-outlined">upload</span> Upload
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="profileBtn">
-            <span class="material-symbols-outlined">person</span> Profile
-          </button>
-        </li>
+        <li class="nav-item"><button class="nav-link" id="homeBtn"><span class="material-symbols-outlined">home</span> Home</button></li>
+        <li class="nav-item"><button class="nav-link" id="inboxBtn"><span class="material-symbols-outlined">inbox</span> Inbox</button></li>
+        <li class="nav-item"><button class="nav-link" id="uploadBtn"><span class="material-symbols-outlined">upload</span> Upload</button></li>
+        <li class="nav-item"><button class="nav-link" id="profileBtn"><span class="material-symbols-outlined">person</span> Profile</button></li>
       </ul>
     </nav>
   </header>
 
   <div class="profile-container">
     <div class="profile-header">
-      <div id="profile-pic">
-        <img id="profile-pic-img" src="" alt="Profile Picture">
-      </div>
+      <div id="profile-pic"><img id="profile-pic-img" src="" alt="Profile Picture"></div>
     </div>
     <div class="profile-info">
       <h2 id="username"></h2>
@@ -60,13 +42,12 @@
       </div>
       <input type="file" id="profilePicInput" accept="image/*" style="display:none;">
       <button id="saveBtn">Save</button>
-    </div>  
+    </div>
 
     <div class="video-section">
       <h3>Uploaded Videos</h3>
       <div class="video-grid"></div>
     </div>
-    <div id="contextMenu">Delete Video</div>
   </div>
 
 <script type="module">
@@ -91,40 +72,40 @@ const bioEl = document.getElementById("bio");
 const editUsername = document.getElementById("editUsername");
 const editBio = document.getElementById("editBio");
 const logoutBtn = document.getElementById("logoutBtn");
+const videoGrid = document.querySelector(".video-grid");
 
 let selectedFile = null;
 
-// Prevent back button from returning after logout
-window.history.pushState(null, "", window.location.href);
-window.onpopstate = () => { window.history.go(1); };
-
-// Navbar redirects
+// ===== Navbar redirects =====
 window.onload = () => {
   document.getElementById('homeBtn').onclick = () => window.location.href = 'home.html';
   document.getElementById('inboxBtn').onclick = () => window.location.href = 'inbox.html';
   document.getElementById('uploadBtn').onclick = () => window.location.href = 'upload.html';
 };
+// ===== Prevent back button after logout =====
+window.history.pushState(null, "", window.location.href);
+window.onpopstate = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) window.location.replace("index.html"); // redirect to login if not authenticated
+};
 
 // ===== Check Supabase session =====
 async function checkAuth() {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    window.location.replace("index.html");
-    return;
-  }
-
+  if (!session) { window.location.replace("index.html"); return; }
   const { data: { user } } = await supabase.auth.getUser();
+
   usernameEl.textContent = user.user_metadata?.firstName || "User";
   bioEl.textContent = user.user_metadata?.bio || "";
   if (user.user_metadata?.picUrl) profilePicImg.src = user.user_metadata.picUrl;
+
+  loadVideos(); // load Cloudinary videos stored in Supabase
 }
 checkAuth();
 
 // ===== Logout =====
 logoutBtn.addEventListener("click", async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) alert("Logout failed: " + error.message);
-  else alert("Logged out successfully"); 
+  await supabase.auth.signOut();
   window.location.replace("index.html");
 });
 
@@ -138,6 +119,7 @@ profilePicInput.addEventListener("change", (e) => {
   selectedFile = e.target.files[0];
   if (selectedFile) profilePicImg.src = URL.createObjectURL(selectedFile);
 });
+
 removePicBtn.addEventListener("click", () => { profilePicImg.src = ""; selectedFile = null; });
 
 saveBtn.addEventListener("click", async () => {
@@ -151,7 +133,7 @@ saveBtn.addEventListener("click", async () => {
     uploadedUrl = data.secure_url;
   }
 
-  const { error } = await supabase.auth.updateUser({
+  await supabase.auth.updateUser({
     data: {
       firstName: editUsername.value || usernameEl.textContent,
       bio: editBio.value || bioEl.textContent,
@@ -159,70 +141,67 @@ saveBtn.addEventListener("click", async () => {
     }
   });
 
-  if (error) return alert("Profile update failed: " + error.message);
-
   usernameEl.textContent = editUsername.value || usernameEl.textContent;
   bioEl.textContent = editBio.value || bioEl.textContent;
   profilePicImg.src = uploadedUrl;
-
-  alert("Profile updated!");
   editForm.style.display = "none";
 });
 
-// ===== Video grid (local only) =====
-const videoGrid = document.querySelector('.video-grid');
-const contextMenu = document.getElementById('contextMenu');
-let videos = JSON.parse(localStorage.getItem('uploadedVideos')) || [];
-let selectedVideoIndex = null;
+// ===== Load Videos from Supabase =====
+async function loadVideos() {
+  const { data, error } = await supabase.from("videos").select("*").order("id", { ascending: false });
+  if (error) { console.error("Error loading videos:", error); return; }
 
-function renderGrid() {
-  videoGrid.innerHTML = '';
-  videos.forEach(({ url, caption }, index) => {
-    const box = document.createElement('div');
-    box.className = 'video-box';
-    const videoEl = document.createElement('video');
-    videoEl.src = url;
+  videoGrid.innerHTML = "";
+  data.forEach(video => {
+    const box = document.createElement("div");
+    box.className = "video-box";
+
+    const videoEl = document.createElement("video");
+    videoEl.src = video.url;
     videoEl.loop = true;
+    videoEl.autoplay = false;
     videoEl.playsInline = true;
     videoEl.muted = true;
-    videoEl.style.filter = 'brightness(0.3)';
+    videoEl.style.filter = "brightness(0.3)";
     box.appendChild(videoEl);
 
-    if (caption) {
-      const captionEl = document.createElement('p');
-      captionEl.className = 'caption-overlay';
-      captionEl.innerText = caption;
+    if (video.caption) {
+      const captionEl = document.createElement("p");
+      captionEl.className = "caption-overlay";
+      captionEl.innerText = video.caption;
       box.appendChild(captionEl);
     }
 
-    box.addEventListener('mouseenter', () => { videoEl.play(); videoEl.style.filter='brightness(1)'; });
-    box.addEventListener('mouseleave', () => { videoEl.pause(); videoEl.style.filter='brightness(0.3)'; });
-    box.addEventListener('click', () => {
-      if (videoEl.paused) { videoEl.muted = false; videoEl.play(); videoEl.style.filter='brightness(1)'; }
-      else { videoEl.pause(); videoEl.style.filter='brightness(0.3)'; }
-    });
-    box.addEventListener('contextmenu', (e) => {
+    // Delete button
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-btn";
+    delBtn.textContent = "Delete";
+    delBtn.onclick = async (e) => {
+      e.stopPropagation();
+      const { error: delError } = await supabase.from("videos").delete().eq("id", video.id);
+      if (delError) {
+        console.error("Delete failed:", delError);
+        alert("Failed to delete video");
+      } else {
+        loadVideos();
+      }
+    };
+    box.appendChild(delBtn);
+
+    // Show delete button on right-click
+    box.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      selectedVideoIndex = index;
-      contextMenu.style.top = e.pageY + 'px';
-      contextMenu.style.left = e.pageX + 'px';
-      contextMenu.style.display = 'block';
+      box.classList.toggle("show-delete");
     });
+
+    box.addEventListener("mouseenter", () => { videoEl.play(); videoEl.style.filter='brightness(1)'; });
+    box.addEventListener("mouseleave", () => { videoEl.pause(); videoEl.style.filter='brightness(0.3)'; });
+    box.addEventListener("click", () => { videoEl.muted = false; videoEl.play(); videoEl.style.filter='brightness(1)'; });
 
     videoGrid.appendChild(box);
   });
 }
-
-renderGrid();
-document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
-contextMenu.addEventListener('click', () => {
-  if (selectedVideoIndex === null) return;
-  videos.splice(selectedVideoIndex, 1);
-  localStorage.setItem('uploadedVideos', JSON.stringify(videos));
-  renderGrid();
-  contextMenu.style.display = 'none';
-  selectedVideoIndex = null;
-});
 </script>
 </body>
 </html>

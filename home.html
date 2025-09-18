@@ -51,84 +51,121 @@
         <button id="down"><span class="material-symbols-outlined">keyboard_arrow_down</span></button>
     </div>
   </main>
-   <script>
-    // Navbar navigation
-    window.onload = function() {
-  const inboxBtn = document.getElementById('inboxBtn');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const profileBtn = document.getElementById('profileBtn');
+ <script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-  inboxBtn.addEventListener('click', () => window.location.href = 'inbox.html');
-  uploadBtn.addEventListener('click', () => window.location.href = 'upload.html');
-  profileBtn.addEventListener('click', () => window.location.href = 'profile.html');
+// Supabase setup
+const supabaseUrl = "https://xvnzrighraugigzqsxyh.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Navbar navigation
+window.onload = function() {
+  document.getElementById('homeBtn').onclick = () => window.location.href = 'home.html';
+  document.getElementById('inboxBtn').onclick = () => window.location.href = 'inbox.html';
+  document.getElementById('uploadBtn').onclick = () => window.location.href = 'upload.html';
+  document.getElementById('profileBtn').onclick = () => window.location.href = 'profile.html';
 };
 
+// Elements
 const qui = document.querySelector('.qui');
 const upBtn = document.getElementById('up');
 const downBtn = document.getElementById('down');
 
-// Load videos from localStorage (simulate Cloudinary)
-let videos = JSON.parse(localStorage.getItem('uploadedVideos')) || [];
+let videos = []; // will store videos from Supabase
 let currentIndex = 0;
 
-function renderSlide(index) {
-  if (!videos.length) {
+// Fetch all videos + captions from Supabase
+async function fetchVideos() {
+  const { data, error } = await supabase
+    .from('videos')
+    .select('url, caption')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch videos:", error);
+    qui.innerHTML = '<p>Failed to load videos.</p>';
+    return;
+  }
+
+  if (!data.length) {
     qui.innerHTML = '<p>No videos uploaded yet.</p>';
     return;
   }
 
+  videos = data; // store fetched videos
+  renderSlide(currentIndex);
+}
+
+// Render a single video slide
+function renderSlide(index) {
+  if (!videos.length) return;
+
   const { url, caption } = videos[index];
-  qui.innerHTML = ''; // Clear previous slide
+  qui.innerHTML = ''; // clear previous slide
 
   const slide = document.createElement('div');
   slide.className = 'slide';
+  slide.style.position = 'relative';
 
   const videoEl = document.createElement('video');
   videoEl.src = url;
   videoEl.autoplay = true;
   videoEl.loop = true;
   videoEl.playsInline = true;
-  videoEl.muted = false; // required for autoplay in modern browsers
   videoEl.volume = 1;
   videoEl.style.width = '100%';
   videoEl.style.height = '100%';
   videoEl.style.objectFit = 'cover';
 
-  // Click to toggle sound & pause/play
+  // Click to pause/play
   videoEl.addEventListener('click', () => {
-    if (videoEl.paused) {
-      videoEl.muted = false; // enable sound on click
-      videoEl.play();
-    } else videoEl.pause();
+    videoEl.paused ? videoEl.play() : videoEl.pause();
   });
 
   slide.appendChild(videoEl);
 
   if (caption) {
     const captionEl = document.createElement('p');
-    captionEl.className = 'caption-overlay';
     captionEl.innerText = caption;
+    captionEl.style.position = 'absolute';
+    captionEl.style.bottom = '10px';
+    captionEl.style.left = '50%';
+    captionEl.style.transform = 'translateX(-50%)';
+    captionEl.style.color = 'white';
+    captionEl.style.fontSize = '1.2rem';
+    captionEl.style.textAlign = 'center';
+    captionEl.style.background = 'rgba(0,0,0,0.5)';
+    captionEl.style.padding = '2px 6px';
+    captionEl.style.borderRadius = '4px';
     slide.appendChild(captionEl);
   }
 
   qui.appendChild(slide);
-}
 
-// Initial render
-if (videos.length > 0) renderSlide(currentIndex);
+  // Play video with sound if autoplay is allowed
+  videoEl.play().catch(err => {
+    videoEl.muted = false;
+    videoEl.play();
+  });
+}
 
 // Scroll navigation
 upBtn.addEventListener('click', () => {
+  if (!videos.length) return;
   currentIndex = (currentIndex - 1 + videos.length) % videos.length;
   renderSlide(currentIndex);
 });
 
 downBtn.addEventListener('click', () => {
+  if (!videos.length) return;
   currentIndex = (currentIndex + 1) % videos.length;
   renderSlide(currentIndex);
 });
 
+// Initial fetch
+fetchVideos();
+</script>
 
-  </script>
 </body>
 </html>

@@ -16,18 +16,12 @@
         <p>Sign up to get started</p>
       </div>
       <form id="signup-form" class="login-form">
-        
+
         <!-- First Name -->
         <div class="form-group">
           <label for="first-name">First Name</label>
           <div class="input-wrapper">
-            <input
-              id="first-name"
-              name="first-name"
-              type="text"
-              required
-              placeholder="Enter your first name"
-            />
+            <input id="first-name" name="first-name" type="text" required placeholder="Enter your first name" />
           </div>
         </div>
 
@@ -35,13 +29,7 @@
         <div class="form-group">
           <label for="last-name">Last Name</label>
           <div class="input-wrapper">
-            <input
-              id="last-name"
-              name="last-name"
-              type="text"
-              required
-              placeholder="Enter your last name"
-            />
+            <input id="last-name" name="last-name" type="text" required placeholder="Enter your last name" />
           </div>
         </div>
 
@@ -49,13 +37,7 @@
         <div class="form-group">
           <label for="email">Email</label>
           <div class="input-wrapper">
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              placeholder="Enter your email"
-            />
+            <input id="email" name="email" type="email" required placeholder="Enter your email" />
           </div>
         </div>
 
@@ -63,13 +45,7 @@
         <div class="form-group">
           <label for="password">Password</label>
           <div class="input-wrapper">
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              placeholder="Create a password"
-            />
+            <input id="password" name="password" type="password" required placeholder="Create a password" />
             <span class="toggle-password" onclick="togglePassword('password', this)">👁</span>
           </div>
         </div>
@@ -78,13 +54,7 @@
         <div class="form-group">
           <label for="confirm-password">Confirm Password</label>
           <div class="input-wrapper">
-            <input
-              id="confirm-password"
-              name="confirm-password"
-              type="password"
-              required
-              placeholder="Confirm your password"
-            />
+            <input id="confirm-password" name="confirm-password" type="password" required placeholder="Confirm your password" />
             <span class="toggle-password" onclick="togglePassword('confirm-password', this)">👁</span>
           </div>
         </div>
@@ -107,13 +77,12 @@
 
   <!-- Supabase Signup Script -->
   <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js"
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-    // 🔹 Replace with your own Supabase credentials
-    const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co"
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0"
+    const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmFnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Toggle password visibility
     window.togglePassword = function(fieldId, icon) {
@@ -128,6 +97,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      // Background bubbles
       const backgroundElement = document.getElementById('background-animation');
       for (let i = 0; i < 20; i++) {
         const bubble = document.createElement('div');
@@ -167,12 +137,13 @@
         spinner.classList.remove("hidden");
         signupButton.disabled = true;
 
-        // Supabase sign up
+        // Sign up user and send confirmation email automatically
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { firstName, lastName } // saved as user_metadata
+            data: { firstName, lastName },
+            emailRedirectTo: window.location.origin + "/index.html" // where user lands after confirming email
           }
         });
 
@@ -184,19 +155,18 @@
         if (error) {
           alert(error.message);
         } else {
-          alert("Signup successful! Please check your email to confirm your account.");
+          alert("Signup successful! A confirmation email has been sent to your inbox.");
           console.log("New user:", data.user);
-          // Optional: redirect to login page
           window.location.href = "index.html";
         }
       });
 
-      // Redirect button
+      // Redirect login button
       document.getElementById("yww").addEventListener("click", function() {
         window.location.href = "index.html";
       });
 
-      // Input animations
+      // Input focus animations
       const inputs = document.querySelectorAll("input");
       inputs.forEach(input => {
         const wrapper = input.parentElement;

@@ -3,123 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Upload Video</title>
     <link rel="stylesheet" href="upload.css">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 </head>
 <body>
-     <!-- Navbar -->
-  <header class="navbar">
-    <div class="logo">DUROH</div>
-    <nav>
-      <ul class="nav-items">
-        <li class="nav-item">
-          <button class="nav-link" id="homeBtn">
-            <span class="material-symbols-outlined">home</span> Home
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="inboxBtn">
-            <span class="material-symbols-outlined">inbox</span> Inbox
-          </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" id="uploadBtn">
-            <span class="material-symbols-outlined">upload</span> Upload
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="profileBtn">
-            <span class="material-symbols-outlined">person</span> Profile
-          </button>
-        </li>
-      </ul>
-    </nav>
-  </header>
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="logo">DUROH</div>
+        <nav>
+            <ul class="nav-items">
+                <li class="nav-item">
+                    <button class="nav-link" id="homeBtn">
+                        <span class="material-symbols-outlined">home</span> Home
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="inboxBtn">
+                        <span class="material-symbols-outlined">inbox</span> Inbox
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="uploadBtn">
+                        <span class="material-symbols-outlined">upload</span> Upload
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="profileBtn">
+                        <span class="material-symbols-outlined">person</span> Profile
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </header>
 
+    <div class="cont">
+        <form id="uploadForm">
+            <div class="weq">
+                <span class="material-symbols-outlined">upload_2</span>
+                <h1>Upload Video</h1>
+            </div>
+            <input type="file" id="videoFile" accept="video/*" required hidden />
+            <label for="videoFile" class="custom-upload"> Upload Video</label>
+            <textarea name="caption" id="caption" placeholder="Enter your caption"></textarea>
+            <div class="preview"></div>
+            <button type="submit" id="submit">Upload</button>
+        </form>
+    </div>
 
-  <div class="cont">
-    <form id="uploadForm">
-      <div class="weq">
-        <span class="material-symbols-outlined">upload_2</span>
-          <h1>Upload Video</h1>
-      </div>
-      <input type="file" id="videoFile" accept="video/*" required hidden />
-      <label for="videoFile" class="custom-upload"> Upload Video</label>
-      <textarea name="caption" id="caption" placeholder="Enter your caption"></textarea>
-      <div class="preview"></div>
-      <button  type="submit" id="submit">Upload</button>
-   </form>
-  </div>
+    <div class="video-feed" id="videoFeed"></div>
 
-  <div class="video-feed" id="videoFeed"></div>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-  <script>
-    window.onload = function() {
-      const homeBtn = document.getElementById('homeBtn');
-      const inboxBtn = document.getElementById('inboxBtn');
-      const profileBtn = document.getElementById('profileBtn');
- 
-      homeBtn.addEventListener('click', function() {
-        window.location.href = 'index.html';
-      });
+// 🔹 Supabase credentials
+const supabaseUrl = "https://xvnzrighraugigzqsxyh.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-      inboxBtn.addEventListener('click', function() {
-        window.location.href = 'inbox.html';
-      });
+// Navbar navigation
+window.onload = function() {
+    const homeBtn = document.getElementById('homeBtn');
+    const inboxBtn = document.getElementById('inboxBtn');
+    const profileBtn = document.getElementById('profileBtn');
 
-      profileBtn.addEventListener('click', function() {
-        window.location.href = 'profile.html';
-      });
-    };
+    homeBtn.addEventListener('click', () => window.location.href = 'home.html');
+    inboxBtn.addEventListener('click', () => window.location.href = 'inbox.html');
+    profileBtn.addEventListener('click', () => window.location.href = 'profile.html');
+};
 
-    const videoFileInput = document.getElementById('videoFile');
+// Video preview
+const videoFileInput = document.getElementById('videoFile');
 const previewContainer = document.querySelector('.preview');
 const uploadForm = document.getElementById('uploadForm');
 const captionInput = document.getElementById('caption');
 
 let uploadedVideos = JSON.parse(localStorage.getItem('uploadedVideos')) || [];
 
-// Preview video
 videoFileInput.addEventListener('change', () => {
-  const file = videoFileInput.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  previewContainer.innerHTML = `<video src="${url}" controls autoplay loop ></video>`;
+    const file = videoFileInput.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    previewContainer.innerHTML = `<video src="${url}" controls autoplay loop></video>`;
 });
 
-// Upload to Cloudinary
+// Upload to Cloudinary + Supabase
 uploadForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const file = videoFileInput.files[0];
-  if (!file) return alert('Select a video!');
+    e.preventDefault();
+    const file = videoFileInput.files[0];
+    const caption = captionInput.value.trim();
+    if (!file) return alert('Select a video!');
+    if (!caption) return alert('Enter a caption!');
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', 'saveImages'); // <-- Cloudinary unsigned preset
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'saveImages'); // Cloudinary unsigned preset
 
-  try {
-    const res = await fetch('https://api.cloudinary.com/v1_1/djjlt3ghq/video/upload', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
+    try {
+        // Upload video to Cloudinary
+        const res = await fetch('https://api.cloudinary.com/v1_1/djjlt3ghq/video/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        const videoUrl = data.secure_url;
 
-    // Save URL + caption in localStorage
-    uploadedVideos.push({ url: data.secure_url, caption: captionInput.value });
-    localStorage.setItem('uploadedVideos', JSON.stringify(uploadedVideos));
+        // Save caption + video URL in localStorage
+        uploadedVideos.push({ url: videoUrl, caption });
+        localStorage.setItem('uploadedVideos', JSON.stringify(uploadedVideos));
 
-    // Clear form
-    previewContainer.innerHTML = '';
-    captionInput.value = '';
-    videoFileInput.value = '';
+        // Save caption + video URL in Supabase
+        const { error } = await supabase.from('videos').insert([{ url: videoUrl, caption }]);
+        if (error) throw error;
 
-    alert('Video uploaded successfully!');
-  } catch (err) {
-    console.error(err);
-    alert('Upload failed!');
-  }
+        // Clear form
+        previewContainer.innerHTML = '';
+        captionInput.value = '';
+        videoFileInput.value = '';
+
+        alert('Upload Successful!');
+    } catch (err) {
+        console.error(err);
+        alert('Upload failed: ' + err.message);
+    }
 });
-  </script>
+</script>
 </body>
 </html>
