@@ -190,3 +190,41 @@ form {
 #submit:hover {
   background-color: whitesmoke;
 }
+    /* Loader styles */
+    .loader {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid transparent;
+      border-top: 3px solid royalblue;
+      border-right: 3px solid white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Upload button with flex to align text + loader */
+    #submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(135deg, royalblue, black);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: opacity 0.3s ease;
+    }
+
+    #submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }

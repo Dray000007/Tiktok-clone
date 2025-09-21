@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="home.css">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DUROH Home</title>
+  <link rel="stylesheet" href="home.css">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 </head>
 <body>
-   <!-- Navbar -->
+  <!-- Navbar -->
   <header class="navbar">
     <div class="logo">DUROH</div>
     <nav>
@@ -24,7 +24,7 @@
           </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="uploadBtn">
+          <button class="nav-link" id="uploadBtn">
             <span class="material-symbols-outlined">upload</span> Upload
           </button>
         </li>
@@ -35,137 +35,148 @@
         </li>
       </ul>
     </nav>
-     <!-- Paste profile pic here -->
-  <div class="profile-header">
-    <div id="profile-pic">
-      <img id="profile-pic-img" src="https://via.placeholder.com/70?text=+" alt="Profile Picture">
-    </div>
+
+    <!-- Profile picture -->
+   <div class="profile-header">
+  <div id="profile-pic">
+    <img id="profile-pic-img" src="" alt="Profile Picture">
   </div>
-    </div>
+</div>
+
   </header>
 
   <main>
     <div class="qui"></div>
     <div class="scroll">
-        <button id="up"><span class="material-symbols-outlined upp">keyboard_arrow_up</span></button>
-        <button id="down"><span class="material-symbols-outlined">keyboard_arrow_down</span></button>
+      <button id="up"><span class="material-symbols-outlined upp">keyboard_arrow_up</span></button>
+      <button id="down"><span class="material-symbols-outlined">keyboard_arrow_down</span></button>
     </div>
   </main>
- <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-// Supabase setup
-const supabaseUrl = "https://xvnzrighraugigzqsxyh.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
-const supabase = createClient(supabaseUrl, supabaseKey);
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-// Navbar navigation
-window.onload = function() {
-  document.getElementById('homeBtn').onclick = () => window.location.href = 'home.html';
-  document.getElementById('inboxBtn').onclick = () => window.location.href = 'inbox.html';
-  document.getElementById('uploadBtn').onclick = () => window.location.href = 'upload.html';
-  document.getElementById('profileBtn').onclick = () => window.location.href = 'profile.html';
-};
+    // Supabase setup
+    const supabaseUrl = "https://xvnzrighraugigzqsxyh.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Elements
-const qui = document.querySelector('.qui');
-const upBtn = document.getElementById('up');
-const downBtn = document.getElementById('down');
+    // Navbar navigation
+    window.onload = function() {
+      document.getElementById('homeBtn').onclick = () => window.location.href = 'home.html';
+      document.getElementById('inboxBtn').onclick = () => window.location.href = 'inbox.html';
+      document.getElementById('uploadBtn').onclick = () => window.location.href = 'upload.html';
+      document.getElementById('profileBtn').onclick = () => window.location.href = 'profile.html';
+    };
 
-let videos = []; // will store videos from Supabase
-let currentIndex = 0;
+    const qui = document.querySelector('.qui');
+    const upBtn = document.getElementById('up');
+    const downBtn = document.getElementById('down');
 
-// Fetch all videos + captions from Supabase
-async function fetchVideos() {
-  const { data, error } = await supabase
-    .from('videos')
-    .select('url, caption')
-    .order('created_at', { ascending: false });
+    let videos = [];
+    let currentIndex = 0;
+      
+    // loading profile picture
+    async function loadProfilePic() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return; // not logged in
 
-  if (error) {
-    console.error("Failed to fetch videos:", error);
-    qui.innerHTML = '<p>Failed to load videos.</p>';
-    return;
+  const { data: { user } } = await supabase.auth.getUser();
+  const picUrl = user.user_metadata?.picUrl;
+
+  const profilePicImg = document.querySelector("#profile-pic-img");
+
+  if (picUrl) {
+    profilePicImg.src = picUrl;
+  } else {
+    // Optional fallback if no pic uploaded yet
+    profilePicImg.src = "default-avatar.png";
   }
-
-  if (!data.length) {
-    qui.innerHTML = '<p>No videos uploaded yet.</p>';
-    return;
-  }
-
-  videos = data; // store fetched videos
-  renderSlide(currentIndex);
 }
 
-// Render a single video slide
-function renderSlide(index) {
-  if (!videos.length) return;
+loadProfilePic();
 
-  const { url, caption } = videos[index];
-  qui.innerHTML = ''; // clear previous slide
+    // Fetch videos
+    async function fetchVideos() {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('url, caption')
+        .order('created_at', { ascending: false });
 
-  const slide = document.createElement('div');
-  slide.className = 'slide';
-  slide.style.position = 'relative';
+      if (error) {
+        console.error("Failed to fetch videos:", error);
+        qui.innerHTML = '<p>Failed to load videos.</p>';
+        return;
+      }
 
-  const videoEl = document.createElement('video');
-  videoEl.src = url;
-  videoEl.autoplay = true;
-  videoEl.loop = true;
-  videoEl.playsInline = true;
-  videoEl.volume = 1;
-  videoEl.style.width = '100%';
-  videoEl.style.height = '100%';
-  videoEl.style.objectFit = 'cover';
+      if (!data.length) {
+        qui.innerHTML = '<p>No videos uploaded yet.</p>';
+        return;
+      }
 
-  // Click to pause/play
-  videoEl.addEventListener('click', () => {
-    videoEl.paused ? videoEl.play() : videoEl.pause();
-  });
+      videos = data;
+      renderSlide(currentIndex);
+    }
 
-  slide.appendChild(videoEl);
+    // Render one video slide
+    function renderSlide(index) {
+      if (!videos.length) return;
 
-  if (caption) {
-    const captionEl = document.createElement('p');
-    captionEl.innerText = caption;
-    captionEl.style.position = 'absolute';
-    captionEl.style.bottom = '10px';
-    captionEl.style.left = '50%';
-    captionEl.style.transform = 'translateX(-50%)';
-    captionEl.style.color = 'white';
-    captionEl.style.fontSize = '1.2rem';
-    captionEl.style.textAlign = 'center';
-    captionEl.style.background = 'rgba(0,0,0,0.5)';
-    captionEl.style.padding = '2px 6px';
-    captionEl.style.borderRadius = '4px';
-    slide.appendChild(captionEl);
-  }
+      const { url, caption } = videos[index];
+      qui.innerHTML = '';
 
-  qui.appendChild(slide);
+      const slide = document.createElement('div');
+      slide.className = 'slide';
 
-  // Play video with sound if autoplay is allowed
-  videoEl.play().catch(err => {
-    videoEl.muted = false;
-    videoEl.play();
-  });
-}
+      const videoEl = document.createElement('video');
+      videoEl.src = url;
+      videoEl.autoplay = true;
+      videoEl.loop = true;
+      videoEl.playsInline = true;
+      videoEl.muted = false;   // ✅ Ensure sound is ON
+      videoEl.volume = 1.0;    // ✅ Full volume
+      videoEl.style.width = '100%';
+      videoEl.style.height = '100%';
+      videoEl.style.objectFit = 'cover';
 
-// Scroll navigation
-upBtn.addEventListener('click', () => {
-  if (!videos.length) return;
-  currentIndex = (currentIndex - 1 + videos.length) % videos.length;
-  renderSlide(currentIndex);
-});
+      videoEl.addEventListener('click', () => {
+        videoEl.paused ? videoEl.play() : videoEl.pause();
+      });
 
-downBtn.addEventListener('click', () => {
-  if (!videos.length) return;
-  currentIndex = (currentIndex + 1) % videos.length;
-  renderSlide(currentIndex);
-});
+      slide.appendChild(videoEl);
 
-// Initial fetch
-fetchVideos();
-</script>
+      if (caption) {
+        const captionEl = document.createElement('p');
+        captionEl.innerText = caption;
+        captionEl.className = 'caption-overlay';
+        slide.appendChild(captionEl);
+      }
 
+      qui.appendChild(slide);
+
+      // ✅ Force autoplay with sound
+      videoEl.play().catch(err => {
+        console.warn("Autoplay blocked, retrying with sound:", err);
+        videoEl.muted = false;
+        videoEl.play();
+      });
+    }
+
+    // Scroll navigation
+    upBtn.addEventListener('click', () => {
+      if (!videos.length) return;
+      currentIndex = (currentIndex - 1 + videos.length) % videos.length;
+      renderSlide(currentIndex);
+    });
+
+    downBtn.addEventListener('click', () => {
+      if (!videos.length) return;
+      currentIndex = (currentIndex + 1) % videos.length;
+      renderSlide(currentIndex);
+    });
+
+    // Init
+    fetchVideos();
+  </script>
 </body>
 </html>
