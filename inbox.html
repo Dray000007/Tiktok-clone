@@ -1,67 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="inbox.css">
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inbox</title>
+  <link rel="stylesheet" href="inbox.css">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 </head>
 <body>
-  <header class="navbar">
-    <div class="logo">DUROH</div>
-    <nav>
-      <ul class="nav-items">
-        <li class="nav-item">
-          <button class="nav-link" id="homeBtn">
-            <span class="material-symbols-outlined">home</span> Home
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="inboxBtn">
-            <span class="material-symbols-outlined">inbox</span> Inbox
-          </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" id="uploadBtn">
-            <span class="material-symbols-outlined">upload</span> Upload
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="profileBtn">
-            <span class="material-symbols-outlined">person</span> Profile
-          </button>
-        </li>
-      </ul>
-    </nav>
-    </header>
-    <div class="chat-container">
-    <div class="messages" id="messages"></div>
+<header class="navbar">
+  <div class="logo">DUROH</div>
+  <nav>
+    <ul class="nav-items">
+      <li class="nav-item"><button class="nav-link" id="homeBtn"><span class="material-symbols-outlined">home</span> Home</button></li>
+      <li class="nav-item"><button class="nav-link" id="inboxBtn"><span class="material-symbols-outlined">inbox</span> Inbox</button></li>
+      <li class="nav-item"><button class="nav-link" id="uploadBtn"><span class="material-symbols-outlined">upload</span> Upload</button></li>
+      <li class="nav-item"><button class="nav-link" id="profileBtn"><span class="material-symbols-outlined">person</span> Profile</button></li>
+    </ul>
+  </nav>
+</header>
 
-    <div class="chat-input-container">
-      <input type="text" id="chatInput" placeholder="Type your message..." />
-      <button id="sendBtn">
-        <span class="material-symbols-outlined">send</span>
-      </button>
-    </div>
+<div class="chat-container">
+  <div class="messages" id="messages"></div>
+  <div class="chat-input-container">
+    <input type="text" id="chatInput" placeholder="Type your message..." />
+    <button id="sendBtn"><span class="material-symbols-outlined">send</span></button>
   </div>
- <script>
-    window.onload = function() {
-      const homeBtn = document.getElementById('homeBtn');
-      const uploadBtn = document.getElementById('uploadBtn');
-      const profileBtn = document.getElementById('profileBtn');
+</div>
 
-      homeBtn.addEventListener('click', function() {
-        window.location.href = 'index.html';
-      });
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-      uploadBtn.addEventListener('click', function() {
-        window.location.href = 'upload.html';
-    });
-        profileBtn.addEventListener('click', function() {
-            window.location.href = 'profile.html';
-        });
+const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const messagesContainer = document.getElementById('messages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+let currentUser = null;
+
+// ===== Auth & Init =====
+async function init() {
+  // Check auth
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return window.location.href = 'index.html';
+  const { data: { user } } = await supabase.auth.getUser();
+  currentUser = user;
+
+  // Load existing messages
+  await loadMessages();
+
+  // Setup realtime subscription
+  const channel = supabase.channel('realtime-messages')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+      appendMessage(payload.new);
+    })
+    .subscribe();
 }
- </script>
+init();
+
+// ===== Append Message =====
+function appendMessage(msg) {
+  if (!msg.created_at) msg.created_at = new Date().toISOString();
+
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('message', msg.user_id === currentUser.id ? 'sent' : 'received');
+
+  const senderDiv = document.createElement('div');
+  senderDiv.className = 'sender-info';
+
+  const pic = document.createElement('img');
+  pic.className = 'sender-pic';
+  pic.src = msg.picUrl || 'default-profile.png';
+  pic.alt = msg.first_name || "User";
+
+  const name = document.createElement('span');
+  name.textContent = msg.first_name || "User";
+
+  senderDiv.appendChild(pic);
+  senderDiv.appendChild(name);
+
+  const content = document.createElement('div');
+  content.className = 'content';
+  content.textContent = msg.content;
+
+  const time = document.createElement('div');
+  time.className = 'time';
+  time.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+  msgDiv.appendChild(senderDiv);
+  msgDiv.appendChild(content);
+  msgDiv.appendChild(time);
+
+  messagesContainer.appendChild(msgDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// ===== Load Messages =====
+async function loadMessages() {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  if (error) return console.error('Load messages error:', error);
+  messagesContainer.innerHTML = '';
+  data.forEach(msg => appendMessage(msg));
+}
+
+// ===== Send Message =====
+async function sendMessage() {
+  const content = chatInput.value.trim();
+  if (!content) return;
+
+  const message = {
+    user_id: currentUser.id,
+    first_name: currentUser.user_metadata?.firstName || "User",
+    picUrl: currentUser.user_metadata?.picUrl || null,
+    content,
+  };
+
+  const { data, error } = await supabase.from('messages').insert([message]).select();
+  if (error) return console.error('Insert message error:', error);
+
+  appendMessage(data[0]);
+  chatInput.value = '';
+}
+
+// ===== Event Listeners =====
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });
+
+</script>
 </body>
 </html>

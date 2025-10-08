@@ -181,7 +181,7 @@ body {
 .video-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* ✅ 3 per row */
-  gap: 15px; /* spacing between boxes */
+  gap: 24px; /* spacing between boxes */
   margin-top: 20px;
 }
 
