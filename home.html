@@ -4,10 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DUROH Home</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="home.css">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 </head>
@@ -40,13 +36,25 @@
       </ul>
     </nav>
 
-    <!-- Profile picture -->
-   <div class="profile-header">
-  <div id="profile-pic">
-    <img id="profile-pic-img" src="" alt="Profile Picture">
-  </div>
-</div>
+    <!-- mobile menu toggle -->
+    <button class="menu-toggle" id="menuToggle">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <nav class="mobile-nav" id="mobileNav" aria-hidden="true">
+      <ul>
+        <li><button class="nav-link" onclick="window.location.href='home.html'">Home</button></li>
+        <li><button class="nav-link" onclick="window.location.href='inbox.html'">Inbox</button></li>
+        <li><button class="nav-link" onclick="window.location.href='upload.html'">Upload</button></li>
+        <li><button class="nav-link" onclick="window.location.href='profile.html'">Profile</button></li>
+      </ul>
+    </nav>
 
+    <!-- Profile picture -->
+    <div class="profile-header">
+      <div id="profile-pic">
+        <img id="profile-pic-img" src="dre.jpg" alt="Profile Picture">
+      </div>
+    </div>
   </header>
 
   <main>
@@ -73,32 +81,40 @@
       document.getElementById('profileBtn').onclick = () => window.location.href = 'profile.html';
     };
 
+    // keep profile header in sync with Profile page (user metadata)
+    async function syncProfileHeader(){
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return; // not signed in
+        const picEl = document.getElementById('profile-pic-img');
+        if (picEl && user.user_metadata?.picUrl) picEl.src = user.user_metadata.picUrl;
+      } catch (err) {
+        console.warn('syncProfileHeader error:', err);
+      }
+    }
+    // run immediately and whenever the page becomes visible
+    syncProfileHeader();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncProfileHeader(); });
+  // listen for cross-tab profile updates
+  window.addEventListener('storage', (e) => { if (e.key === 'profile_updated') syncProfileHeader(); });
+
+  // Mobile menu toggle logic
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileNav = document.getElementById('mobileNav');
+  function closeMobileNav(){ mobileNav.style.display='none'; mobileNav.setAttribute('aria-hidden','true'); }
+  function openMobileNav(){ mobileNav.style.display='block'; mobileNav.setAttribute('aria-hidden','false'); }
+  menuToggle.addEventListener('click', (e) => { e.stopPropagation(); const open = mobileNav.style.display === 'block'; open ? closeMobileNav() : openMobileNav(); });
+  // close when clicking outside
+  document.addEventListener('click', (e) => { if (!mobileNav.contains(e.target) && e.target !== menuToggle) closeMobileNav(); });
+  // close on escape
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMobileNav(); });
+
     const qui = document.querySelector('.qui');
     const upBtn = document.getElementById('up');
     const downBtn = document.getElementById('down');
 
     let videos = [];
     let currentIndex = 0;
-      
-    // loading profile picture
-    async function loadProfilePic() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return; // not logged in
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const picUrl = user.user_metadata?.picUrl;
-
-  const profilePicImg = document.querySelector("#profile-pic-img");
-
-  if (picUrl) {
-    profilePicImg.src = picUrl;
-  } else {
-    // Optional fallback if no pic uploaded yet
-    profilePicImg.src = "default-avatar.png";
-  }
-}
-
-loadProfilePic();
 
     // Fetch videos
     async function fetchVideos() {

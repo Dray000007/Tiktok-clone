@@ -22,6 +22,17 @@
         <li class="nav-item"><button class="nav-link" id="profileBtn"><span class="material-symbols-outlined">person</span> Profile</button></li>
       </ul>
     </nav>
+    <button class="menu-toggle" id="menuToggle">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <nav class="mobile-nav" id="mobileNav" aria-hidden="true">
+      <ul>
+        <li><button class="nav-link" onclick="window.location.href='home.html'">Home</button></li>
+        <li><button class="nav-link" onclick="window.location.href='inbox.html'">Inbox</button></li>
+        <li><button class="nav-link" onclick="window.location.href='upload.html'">Upload</button></li>
+        <li><button class="nav-link" onclick="window.location.href='profile.html'">Profile</button></li>
+      </ul>
+    </nav>
   </header>
 
   <div class="profile-container">
@@ -155,6 +166,8 @@ saveBtn.addEventListener("click", async () => {
   bioEl.textContent = editBio.value || bioEl.textContent;
   profilePicImg.src = uploadedUrl;
   editForm.style.display = "none";
+  // notify other pages/tabs that profile was updated
+  try { localStorage.setItem('profile_updated', String(Date.now())); } catch (e) { /* ignore */ }
 });
 
 // ===== Load Videos from Supabase =====
@@ -202,6 +215,14 @@ async function loadVideos() {
     videoGrid.appendChild(box);
   });
 }
+// Mobile menu toggle logic (shared)
+const menuToggle = document.getElementById('menuToggle');
+const mobileNav = document.getElementById('mobileNav');
+function closeMobileNav(){ mobileNav.style.display='none'; mobileNav.setAttribute('aria-hidden','true'); }
+function openMobileNav(){ mobileNav.style.display='block'; mobileNav.setAttribute('aria-hidden','false'); }
+menuToggle.addEventListener('click', (e) => { e.stopPropagation(); const open = mobileNav.style.display === 'block'; open ? closeMobileNav() : openMobileNav(); });
+document.addEventListener('click', (e) => { if (!mobileNav.contains(e.target) && e.target !== menuToggle) closeMobileNav(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMobileNav(); });
 </script>
 </body>
 </html>

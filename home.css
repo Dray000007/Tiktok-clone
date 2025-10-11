@@ -80,20 +80,23 @@ body {
 .profile-header {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
 #profile-pic {
-  width: 60px;
-  height: 60px;
+  width: 75px;
+  height: 75px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid #87CEFA;
+  object-fit: cover;
+  border: 2px solid #5795f3;
 }
 
 #profile-pic img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 /* Main container */
@@ -102,7 +105,8 @@ main {
   min-height: 85vh;
   background-color: black;
   display: flex;
-  align-items: flex-start;
+  /* center children vertically so .qui and .scroll are mid-page */
+  align-items: center;
   justify-content: center;
   position: relative;
   overflow-x: hidden;
@@ -110,8 +114,10 @@ main {
 
 /* Video container */
 .qui {
-  width: 350px;
-  height: 80vh;
+  /* increased width and reduced height per request */
+  width: 700px;
+  /* increased by 50% from 40vh */
+  height: 60vh;
   border: 7px solid #5795f3;
   border-radius: 40px;
   margin: 20px 0 20px 70px;
@@ -160,7 +166,8 @@ main {
   flex-direction: column;
   align-items: center;
   gap: 2rem;
-  margin: 200px 20px;
+  /* reduce the large top margin so it aligns to center with .qui */
+  margin: 0 20px;
 }
 
 .scroll button {
@@ -187,4 +194,65 @@ main {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Responsive navbar: collapse into menu on small screens */
+.menu-toggle {
+  display: none;
+  background: transparent;
+  border: 2px solid #5795f3;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mobile-nav {
+  display: none;
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  background: transparent;
+  padding: 6px;
+  border-radius: 8px;
+  z-index: 1000;
+}
+.mobile-nav ul { list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 6px; }
+.mobile-nav .nav-link {
+  font-size: 18px;
+  display: block;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mobile-nav .nav-link:hover,
+.mobile-nav .nav-link:focus {
+  background: rgba(87,149,243,0.14);
+  color: #eaf4ff;
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .nav-items { display: none; }
+  .menu-toggle { display: inline-flex; }
+  /* shrink profile pic on small screens */
+  #profile-pic { width: 48px; height: 48px; border-width: 2px; }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .logo { font-size: 32px; }
+  .qui { width: 90%; height: 50vh; margin-left: 10px; }
+  .caption-overlay { font-size: 0.9rem; }
+  .menu-toggle { padding: 6px 8px; }
+}
+
+@media (max-width: 360px) {
+  .logo { font-size: 28px; }
+  .qui { width: 96%; height: 45vh; margin-left: 6px; }
+  .caption-overlay { font-size: 0.8rem; }
+  #profile-pic { width: 40px; height: 40px; }
+  .nav-item .nav-link { font-size: 14px; padding: 4px 6px; }
 }

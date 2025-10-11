@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inbox</title>
-  <link rel="stylesheet" href="inbox.css">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inbox</title>
+<link rel="stylesheet" href="inbox.css">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 </head>
 <body>
+
 <header class="navbar">
   <div class="logo">DUROH</div>
   <nav>
@@ -18,6 +19,17 @@
       <li class="nav-item"><button class="nav-link" id="profileBtn"><span class="material-symbols-outlined">person</span> Profile</button></li>
     </ul>
   </nav>
+    <button class="menu-toggle" id="menuToggle">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <nav class="mobile-nav" id="mobileNav" aria-hidden="true">
+      <ul>
+        <li><button class="nav-link" onclick="window.location.href='home.html'">Home</button></li>
+        <li><button class="nav-link" onclick="window.location.href='inbox.html'">Inbox</button></li>
+        <li><button class="nav-link" onclick="window.location.href='upload.html'">Upload</button></li>
+        <li><button class="nav-link" onclick="window.location.href='profile.html'">Profile</button></li>
+      </ul>
+    </nav>
 </header>
 
 <div class="chat-container">
@@ -27,46 +39,49 @@
     <button id="sendBtn"><span class="material-symbols-outlined">send</span></button>
   </div>
 </div>
-
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
+// ===== Supabase Setup =====
 const SUPABASE_URL = "https://xvnzrighraugigzqsxyh.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bnpyaWdocmF1Z2lnenFzeHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNzUsImV4cCI6MjA3MjM3ODI3NX0.7o5Z30AhbZkAuLq9mgaQptAeV3zFIyT_KJt4hOcRBJ0";
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ===== DOM Elements =====
 const messagesContainer = document.getElementById('messages');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
+// navbar buttons
+const homeBtn = document.getElementById('homeBtn');
+const uploadBtn = document.getElementById('uploadBtn');
+const profileBtn = document.getElementById('profileBtn');
 
+homeBtn && (homeBtn.onclick = () => window.location.href = 'home.html');
+uploadBtn && (uploadBtn.onclick = () => window.location.href = 'upload.html');
+profileBtn && (profileBtn.onclick = () => window.location.href = 'profile.html');
+
+// ===== Current User =====
 let currentUser = null;
 
-// ===== Auth & Init =====
-async function init() {
-  // Check auth
+// ===== Check Auth =====
+async function checkAuth() {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return window.location.href = 'index.html';
+  if (!session) {
+    window.location.href = 'index.html';
+    return;
+  }
   const { data: { user } } = await supabase.auth.getUser();
   currentUser = user;
-
-  // Load existing messages
-  await loadMessages();
-
-  // Setup realtime subscription
-  const channel = supabase.channel('realtime-messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-      appendMessage(payload.new);
-    })
-    .subscribe();
 }
-init();
+await checkAuth();
 
-// ===== Append Message =====
+// ===== Append Message to DOM =====
 function appendMessage(msg) {
-  if (!msg.created_at) msg.created_at = new Date().toISOString();
+  const isSent = msg.user_id === currentUser.id;
 
   const msgDiv = document.createElement('div');
-  msgDiv.classList.add('message', msg.user_id === currentUser.id ? 'sent' : 'received');
+  msgDiv.className = 'message ' + (isSent ? 'sent' : 'received');
 
   const senderDiv = document.createElement('div');
   senderDiv.className = 'sender-info';
@@ -105,7 +120,11 @@ async function loadMessages() {
     .select('*')
     .order('created_at', { ascending: true });
 
-  if (error) return console.error('Load messages error:', error);
+  if (error) {
+    console.error("Load messages error:", error);
+    return;
+  }
+
   messagesContainer.innerHTML = '';
   data.forEach(msg => appendMessage(msg));
 }
@@ -120,19 +139,43 @@ async function sendMessage() {
     first_name: currentUser.user_metadata?.firstName || "User",
     picUrl: currentUser.user_metadata?.picUrl || null,
     content,
+    created_at: new Date().toISOString()
   };
 
-  const { data, error } = await supabase.from('messages').insert([message]).select();
-  if (error) return console.error('Insert message error:', error);
-
-  appendMessage(data[0]);
   chatInput.value = '';
+
+  // Optimistic append
+  appendMessage(message);
+
+  // Save to Supabase
+  const { error } = await supabase.from('messages').insert([message]);
+  if (error) console.error("Insert error:", error.message);
 }
 
 // ===== Event Listeners =====
 sendBtn.addEventListener('click', sendMessage);
-chatInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
 
+// ===== Real-time Subscription =====
+const messagesChannel = supabase.channel('public:messages')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+    // Only append if message is not from current user
+    if (payload.new.user_id !== currentUser.id) appendMessage(payload.new);
+  })
+  .subscribe();
+
+// ===== Initial Load =====
+loadMessages();
+
+// Mobile menu toggle logic (shared)
+const menuToggle = document.getElementById('menuToggle');
+const mobileNav = document.getElementById('mobileNav');
+function closeMobileNav(){ if(mobileNav){ mobileNav.style.display='none'; mobileNav.setAttribute('aria-hidden','true'); } }
+function openMobileNav(){ if(mobileNav){ mobileNav.style.display='block'; mobileNav.setAttribute('aria-hidden','false'); } }
+menuToggle && menuToggle.addEventListener('click', (e) => { e.stopPropagation(); const open = mobileNav && mobileNav.style.display === 'block'; open ? closeMobileNav() : openMobileNav(); });
+document.addEventListener('click', (e) => { if (mobileNav && !mobileNav.contains(e.target) && e.target !== menuToggle) closeMobileNav(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMobileNav(); });
 </script>
+
 </body>
 </html>

@@ -42,9 +42,15 @@
                 required
                 placeholder="Enter your password"
               />
-              <span id="togglePassword" class="toggle-password" style="cursor:pointer">👁</span>
+                <span id="togglePassword" class="toggle-password" style="cursor:pointer">👁</span>
             </div>
         </div>
+          <div class="form-group remember">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="rememberMe" />
+              Remember me
+            </label>
+          </div>
         <button type="submit" id="login-button" class="login-button">
           <span class="button-text">Log in</span>
           <span class="spinner hidden"></span>
@@ -76,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const spinner = loginButton.querySelector(".spinner");
   const passwordInput = document.getElementById("password");
   const togglePassword = document.getElementById("togglePassword");
+  const rememberCheckbox = document.getElementById('rememberMe');
 
   // ===== Toggle Password Visibility =====
   togglePassword.addEventListener("click", () => {
@@ -87,6 +94,15 @@ document.addEventListener("DOMContentLoaded", () => {
       togglePassword.textContent = "👁";
     }
   });
+
+  // Prefill email from localStorage if remembered
+  const REMEMBER_KEY = 'remember_email';
+  const saved = localStorage.getItem(REMEMBER_KEY);
+  if (saved) {
+    const emailInput = document.getElementById('email');
+    emailInput.value = saved;
+    rememberCheckbox.checked = true;
+  }
 
   // ===== Login Form Submission =====
   loginForm.addEventListener("submit", async (e) => {
@@ -114,6 +130,15 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       alert("An unexpected error occurred: " + err.message);
     }
+
+    // Save or remove remembered email after attempt (only email, not password)
+    try {
+      if (rememberCheckbox.checked) {
+        localStorage.setItem(REMEMBER_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBER_KEY);
+      }
+    } catch (e) { console.warn('remember me storage error', e); }
 
     buttonText.classList.remove("hidden");
     spinner.classList.add("hidden");
