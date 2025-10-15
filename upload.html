@@ -86,6 +86,20 @@
       document.getElementById('profileBtn').addEventListener('click', () => window.location.href = 'profile.html');
     };
 
+    // ===== Check Auth (require sign-in) =====
+    let currentUser = null;
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Require sign-in before uploading
+        window.location.href = 'index.html';
+        return;
+      }
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+    }
+    await checkAuth();
+
     // Video preview
     const videoFileInput = document.getElementById('videoFile');
     const previewContainer = document.querySelector('.preview');
@@ -126,9 +140,17 @@
         const data = await res.json();
         const videoUrl = data.secure_url;
 
-        // Save caption + video URL in Supabase
-        const { error } = await supabase.from('videos').insert([{ url: videoUrl, caption }]);
-        if (error) throw error;
+      // Save caption + video URL in Supabase and attach owner id.
+      // If a local_user_id exists (from a previous insert) prefer it. If not,
+      // if signed-in via Supabase use that. Otherwise omit user_id and let the
+      // DB default (gen_random_uuid()) create an id. We then capture and store
+      // the returned user_id so this client can be associated with that id.
+      // Must be authenticated; set uploader to current user's id.
+      const insertPayload = { url: videoUrl, caption, user_id: currentUser.id };
+
+      // Insert and return the inserted row (no local storage handling)
+      const { data: inserted, error } = await supabase.from('videos').insert([insertPayload]).select().single();
+      if (error) throw error;
 
         // Clear form
         previewContainer.innerHTML = '';

@@ -91,6 +91,10 @@ const logoutBtn = document.getElementById("logoutBtn");
 const videoGrid = document.querySelector(".video-grid");
 
 let selectedFile = null;
+let currentUserId = null;
+function getLocalUserId(){
+  try { return localStorage.getItem('local_user_id'); } catch(e){ return null; }
+}
 
 // ===== Navbar redirects =====
 window.onload = () => {
@@ -109,12 +113,30 @@ window.onpopstate = async () => {
 // ===== Check Supabase session =====
 async function checkAuth() {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) { window.location.replace("index.html"); return; }
-  const { data: { user } } = await supabase.auth.getUser();
+  if (session) {
+    const { data: { user } } = await supabase.auth.getUser();
 
-  usernameEl.textContent = user.user_metadata?.firstName || "User";
-  bioEl.textContent = user.user_metadata?.bio || "";
-  profilePicImg.src = user.user_metadata?.picUrl || DEFAULT_PIC;
+    usernameEl.textContent = user.user_metadata?.firstName || "User";
+    bioEl.textContent = user.user_metadata?.bio || "";
+    profilePicImg.src = user.user_metadata?.picUrl || DEFAULT_PIC;
+    // remember current user id so profile only shows that user's uploads
+    currentUserId = user.id;
+  } else {
+    // no Supabase session — try a local stored id (from DB-generated default flow)
+    const localId = getLocalUserId();
+    if (localId) {
+      usernameEl.textContent = 'Local User';
+      bioEl.textContent = '';
+      profilePicImg.src = DEFAULT_PIC;
+      currentUserId = localId;
+    } else {
+      // nothing available; leave UI minimal and currentUserId null
+      usernameEl.textContent = 'User';
+      bioEl.textContent = '';
+      profilePicImg.src = DEFAULT_PIC;
+      currentUserId = null;
+    }
+  }
 
   loadVideos();
 }
@@ -172,7 +194,17 @@ saveBtn.addEventListener("click", async () => {
 
 // ===== Load Videos from Supabase =====
 async function loadVideos() {
-  const { data, error } = await supabase.from("videos").select("*").order("id", { ascending: false });
+  // If we don't have a current user id yet, show empty state.
+  if (!currentUserId) {
+    videoGrid.innerHTML = '<p>No videos uploaded yet.</p>';
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("videos")
+    .select("*")
+    .eq('user_id', currentUserId)
+    .order("id", { ascending: false });
   if (error) { console.error("Error loading videos:", error); return; }
 
   videoGrid.innerHTML = "";
